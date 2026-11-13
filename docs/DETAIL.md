@@ -106,9 +106,10 @@ bridge starts on the editor main thread, and `status`, `execute`,
 `console`, `asset_search` and `read_asset` answer correctly. `execute` was
 exercised for a value, a compile error (reported against the snippet line, not
 the generated wrapper line), an uncaught exception, and an `await` — the last one
-runs its continuation on the thread pool, which keeps the editor responsive while
-the snippet finishes and turns a Unity API call after the `await` into Unity's
-own main-thread exception instead of a freeze.
+runs its continuation on the thread pool, avoiding the captured-context deadlock.
+The editor main thread still waits until the snippet finishes; this does not make
+long-running code nonblocking. Unity APIs that require the main thread cannot be
+used after an asynchronous continuation (verified with Application.dataPath).
 
 Four issues that only a real editor surfaced are fixed in the package: the Roslyn
 assemblies are staged from Unity's own folder (the older set failed at runtime
@@ -120,7 +121,8 @@ handshake caches `Application.dataPath` before the accept thread starts
 a class and loads it with `Assembly.Load` instead of using `CSharpScript`, whose
 assembly loader throws `NotImplementedException` on Unity's Mono.
 
-Play mode, menu items and recompiles are implemented but not exercised there.
+Entering and leaving play mode, reconnecting after domain reload, and requesting
+recompilation were also exercised. Menu items have not been tested there.
 No LaTeX document has been compiled end to end on this machine, and no real
 Blender session has been used.
 

@@ -137,15 +137,17 @@ the archive is somewhere unusual.
   the missing-engine case and log parsing; a real Blender session and a real
   `xelatex` run are still untested here.
 - **Unity is verified against one real project** (Unity 2021.3.18f1):
-  `unity_status`, `unity_execute`, `unity_get_console_log`, `unity_asset_search`
-  and `unity_asset_read` were exercised end to end. Play mode, menu items and
-  recompiles are implemented but not exercised on that project.
+  `unity_status`, `unity_execute`, `unity_console`, `unity_asset_search`
+  and `unity_asset_read` were exercised end to end, along with entering/leaving
+  play mode, reconnecting after reload, and requesting recompilation. Menu items
+  have not been exercised on that project.
 - `unity_execute` compiles the snippet with Roslyn and runs it **on the editor
   main thread**, which is what lets it call Unity APIs; a script that blocks
   freezes the editor until it returns. Use `return` for the result — there is no
   trailing-expression handling. `await` works, but the continuation resumes on
-  the thread pool, so a Unity API call after an `await` raises Unity's own
-  "can only be called from the main thread" error (verified on 2021.3.18f1).
+  the thread pool. APIs requiring the main thread, such as Application.dataPath,
+  raise Unity's main-thread error there. The editor still waits for completion;
+  this fix avoids a context deadlock, not blocking from long-running snippets.
 - `unity_execute` runs arbitrary C# in your editor, and `blender_execute`
   arbitrary Python. Set `allowExecute: false` if you want the rest of the tools
   without that power.

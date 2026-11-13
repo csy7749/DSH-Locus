@@ -71,7 +71,9 @@ function existingAssemblies() {
       }
       if (!entry.name.toLowerCase().endsWith('.dll')) continue
       const name = path.basename(entry.name, path.extname(entry.name))
-      if (!found.has(name)) found.set(name, full)
+      // Prefer an Editor-enabled copy: that is the one Unity will clash with.
+      const previous = found.get(name)
+      if (!previous || (!importedByEditor(previous) && importedByEditor(full))) found.set(name, full)
     }
   }
   for (const dir of ['Assets', 'Packages']) {
@@ -83,10 +85,11 @@ function existingAssemblies() {
 
 /**
  * Unity only reports a name clash for assemblies it actually imports for the
- * current platform, so a copy that is switched off in the Editor is no clash at
- * all (and we do need to ship ours in that case). The .meta spells that out as
- * `Exclude Editor: 1`; a missing .meta means "let Unity decide", which we treat
- * as a real clash.
+ * platform in use, so a copy that is switched off in the Editor is no clash at
+ * all (and we do need to ship ours in that case). The .meta carries that as a
+ * platformData entry for Editor; older/other exporters also write an
+ * `Exclude Editor: 1` setting. A missing .meta means "let Unity decide", which
+ * we treat as a real clash.
  * @param {string} dllPath - path of the existing assembly.
  */
 function importedByEditor(dllPath) {
@@ -98,17 +101,28 @@ function importedByEditor(dllPath) {
     return true
   }
   if (/Exclude Editor:\s*1/.test(text)) return false
-  return true
+  const blocks = text.split(/^\s*-\s+first:/m)
+  // When Any Platform is enabled, Editor.enabled can be zero while the DLL
+  // still applies to the Editor. Exclude Editor above is the explicit opt-out.
+  const any = blocks.find((block) => /(?:Any:\s*\r?\n|['"]{2}:\s*Any)/.test(block))
+  if (any && /enabled:\s*1/.test(any)) return true
+  const entry = blocks.find((block) => /Editor:\s*Editor/.test(block))
+  if (!entry) return true
+  const enabled = /enabled:\s*(\d)/.exec(entry)
+  return enabled ? enabled[1] !== '0' : true
 }
 
 const provided = existingAssemblies()
 
-/** @type {{copied: number, skipped: Array<{name: string, existing: string}>}} */
-const report = { copied: 0, skipped: [] }
+/** @type {{copied: number, skipped: Array<{name: string, existing: string}>, planned: string[]}} */
+const report = { copied: 0, skipped: [], planned: [] }
+/** @type {Set<string>} */
+const skippedNames = new Set()
+let dryRun = false
 
 /** @param {string} source @param {string} target */
 function copyTree(source, target) {
-  fs.mkdirSync(target, { recursive: true })
+  if (!dryRun) fs.mkdirSync(target, { recursive: true })
   for (const entry of fs.readdirSync(source, { withFileTypes: true })) {
     const from = path.join(source, entry.name)
     const to = path.join(target, entry.name)
@@ -116,13 +130,24 @@ function copyTree(source, target) {
       copyTree(from, to)
       continue
     }
-    if (entry.name.toLowerCase().endsWith('.dll') && !entry.name.endsWith('.resources.dll')) {
+    const isDll = entry.name.toLowerCase().endsWith('.dll') && !entry.name.endsWith('.resources.dll')
+    if (isDll) {
       const name = path.basename(entry.name, '.dll')
       const existing = provided.get(name)
       if (existing && importedByEditor(existing)) {
         report.skipped.push({ name, existing: path.relative(projectRoot, existing) })
+        skippedNames.add(name)
         continue
       }
+    }
+    // Do not leave a .meta behind for an assembly we decided not to ship.
+    if (entry.name.endsWith('.dll.meta')) {
+      const name = path.basename(entry.name, '.dll.meta')
+      if (skippedNames.has(name)) continue
+    }
+    if (dryRun) {
+      report.planned.push(path.relative(projectRoot, to))
+      continue
     }
     fs.copyFileSync(from, to)
     report.copied += 1
@@ -132,12 +157,18 @@ function copyTree(source, target) {
 if (checkOnly) {
   const staged = fs.existsSync(path.join(packageDir, 'Editor', 'Roslyn'))
     && fs.readdirSync(path.join(packageDir, 'Editor', 'Roslyn')).some((name) => name.endsWith('.dll'))
-  console.log(staged ? 'The Unity package is ready to install.' : 'Roslyn is not staged yet: run node scripts/sync-roslyn.mjs')
-  console.log(`Project: ${projectRoot} (Unity ${unityVersion})`)
-  if (report.skipped.length > 0) {
-    for (const entry of report.skipped) console.log(`  conflict: ${entry.name} already at ${entry.existing}`)
+  if (!staged) {
+    console.error('Roslyn is not staged yet: run node scripts/sync-roslyn.mjs')
+    process.exit(1)
   }
-  process.exit(staged ? 0 : 1)
+  dryRun = true
+  copyTree(packageDir, destination)
+  console.log(`Project: ${projectRoot} (Unity ${unityVersion})`)
+  console.log(`Would install ${report.planned.length} files into Packages/${PACKAGE_NAME}.`)
+  for (const entry of report.skipped) {
+    console.log(`  keeps the project's ${entry.name}.dll (${entry.existing}) instead of shipping ours`)
+  }
+  process.exit(0)
 }
 
 fs.rmSync(destination, { recursive: true, force: true })
