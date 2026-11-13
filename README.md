@@ -35,15 +35,17 @@ that runs inside Unity and Blender respectively.
 
 ### 1. The DSH plugin
 
+In the GUI: **Plugins → Add plugin**, then choose this directory (or paste its
+absolute path). Fully restart DSH so the bundle is loaded and the tools appear.
+
+From the command line, with DSH fully quit:
+
 ```sh
 dsh plugin --profile desktop add /absolute/path/to/dsh-locus
 ```
 
-Or install it from the GUI: **Plugins → Add plugin →** pick this directory.
-Then fully restart DSH so the bundle is loaded and the tools appear.
-
-The plugin needs no npm dependencies: it only uses Node's standard library and
-the Cordis `context` the host passes in.
+Requirements: Node 22.8 or newer — the plugin itself uses nothing but Node's
+standard library and the Cordis `context` the host passes in.
 
 ### 2. Unity bridge (per project)
 
@@ -116,7 +118,9 @@ npm run verify:host           # mount the plugin on the harness's real Cordis + 
 
 The test suite drives the real Blender add-on against a stubbed `bpy`, so the
 socket server, token handshake, main-thread scheduling and instance lifecycle
-are all exercised without Blender installed. `npm test` runs every file in one
+are all exercised without Blender installed. Those two tests need a Python
+interpreter (`PYTHON` overrides the default, which is `python` then `python3`
+then `py`) and are skipped when none is found. `npm test` runs every file in one
 process (`--test-isolation=none`) by design: the suite starts real sockets and a
 Python child, which a per-file fork cannot do under a restrictive sandbox. If you
 invoke `node --test` yourself, keep `--test-isolation=none --test-force-exit`.

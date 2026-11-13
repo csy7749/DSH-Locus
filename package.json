@@ -34,7 +34,7 @@
     "latex"
   ],
   "engines": {
-    "node": ">=20"
+    "node": ">=22.8"
   },
   "scripts": {
     "test": "node --test --test-isolation=none --test-force-exit test/*.test.mjs",

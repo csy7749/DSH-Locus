@@ -1,6 +1,6 @@
 import './helpers/state.mjs'
 import assert from 'node:assert/strict'
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -12,6 +12,23 @@ const { callBridge, LocusError } = await import('../src/protocol.js')
 const { instancesDir } = await import('../src/paths.js')
 
 const here = path.dirname(fileURLToPath(import.meta.url))
+
+/**
+ * The Blender bridge is Python, so these tests need an interpreter. Probing keeps
+ * the suite green on machines that only want the Node side; the probe itself may
+ * not capture output, because some sandboxes forbid piped child stdio.
+ * @returns {string | undefined} interpreter that runs `import sys`, if any.
+ */
+function findPython() {
+  for (const candidate of [process.env.PYTHON, 'python', 'python3', 'py'].filter(Boolean)) {
+    const probe = spawnSync(candidate, ['-c', 'import sys'], { stdio: 'ignore' })
+    if (probe.status === 0) return candidate
+  }
+  return undefined
+}
+
+const python = findPython()
+const needsPython = python ? false : 'no Python interpreter found; set PYTHON to run the Blender bridge tests'
 
 /**
  * Start the Blender add-on against the stub bpy module.
@@ -28,7 +45,7 @@ async function startAddon() {
     }
   }
 
-  const child = spawn(process.env.PYTHON ?? 'python', [path.join(here, 'helpers', 'blender_host.py')], {
+  const child = spawn(python, [path.join(here, 'helpers', 'blender_host.py')], {
     env: { ...process.env },
     stdio: 'ignore',
   })
@@ -63,7 +80,7 @@ function stop(child) {
   })
 }
 
-test('blender add-on speaks the dsh-locus protocol', async (t) => {
+test('blender add-on speaks the dsh-locus protocol', { skip: needsPython }, async (t) => {
   const { child, record } = await startAddon()
   try {
     assert.equal(record.app, 'blender')
@@ -125,9 +142,9 @@ test('blender add-on speaks the dsh-locus protocol', async (t) => {
   }
 })
 
-test('register publishes an instance file and unregister removes it', async () => {
+test('register publishes an instance file and unregister removes it', { skip: needsPython }, async () => {
   const resultPath = path.join(os.tmpdir(), `dsh-locus-lifecycle-${Date.now()}.json`)
-  const child = spawn(process.env.PYTHON ?? 'python', [path.join(here, 'helpers', 'blender_lifecycle.py'), resultPath], {
+  const child = spawn(python, [path.join(here, 'helpers', 'blender_lifecycle.py'), resultPath], {
     env: { ...process.env },
     stdio: 'ignore',
   })
