@@ -30,12 +30,17 @@ namespace DshLocus
         private static string token;
         private static int port;
         private static string instanceFile;
+        // Cached on the main thread in Start(): Unity throws
+        // "get_dataPath can only be called from the main thread" when a
+        // connection thread asks for it, and the hello reply is built there.
+        private static string projectRoot;
+        private static string unityVersion;
         private static readonly ConcurrentQueue<DshLocusRequest> queue = new ConcurrentQueue<DshLocusRequest>();
         private static readonly List<TcpClient> clients = new List<TcpClient>();
 
         public static bool IsRunning { get { return running; } }
         public static int Port { get { return port; } }
-        public static string ProjectPath { get { return DshLocusPaths.ProjectRoot(); } }
+        public static string ProjectPath { get { return projectRoot ?? DshLocusPaths.ProjectRoot(); } }
 
         static DshLocusServer()
         {
@@ -75,6 +80,9 @@ namespace DshLocus
             if (running) return;
             try
             {
+                // Main thread: safe to ask Unity for these.
+                projectRoot = DshLocusPaths.ProjectRoot();
+                unityVersion = Application.unityVersion;
                 DshLocusConsole.Hook();
                 token = NewToken();
                 listener = new TcpListener(IPAddress.Loopback, 0);
@@ -103,8 +111,7 @@ namespace DshLocus
         {
             if (!running && listener == null) return;
             running = false;
-            EditorApplication.update -= Pump;
-            try { if (listener != null) listener.Stop(); } catch { }
+            EditorApplication.update -= Pump;            try { if (listener != null) listener.Stop(); } catch { }
             listener = null;
             lock (clients)
             {
@@ -144,7 +151,7 @@ namespace DshLocus
                 "token", token,
                 "projectPath", root,
                 "projectName", new DirectoryInfo(root).Name,
-                "version", Application.unityVersion,
+                "version", unityVersion,
                 "startedAt", DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
             instanceFile = Path.Combine(directory, DshLocusPaths.Key(root) + ".json");
             var temporary = instanceFile + "." + Process.GetCurrentProcess().Id + ".tmp";
@@ -274,12 +281,14 @@ namespace DshLocus
 
         private static Dictionary<string, object> HelloRecord()
         {
+            // Runs on a connection thread: only use values cached by Start().
+            var root = projectRoot ?? string.Empty;
             return DshLocusEnvelope.Dict(
                 "app", "unity",
                 "pid", Process.GetCurrentProcess().Id,
-                "version", Application.unityVersion,
-                "projectPath", ProjectPath,
-                "projectName", new DirectoryInfo(ProjectPath).Name,
+                "version", unityVersion,
+                "projectPath", root,
+                "projectName", root.Length == 0 ? string.Empty : new DirectoryInfo(root).Name,
                 "capabilities", DshLocusHandlers.Capabilities());
         }
 

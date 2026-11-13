@@ -17,7 +17,7 @@ that runs inside Unity and Blender respectively.
 | Tool | Purpose |
 | --- | --- |
 | `unity_status` | Editor version, project, active scene, play mode, compile state |
-| `unity_execute` | Run C# in the editor (Roslyn script semantics) |
+| `unity_execute` | Run C# in the editor (compiled with Roslyn, run on the main thread) |
 | `unity_console` | Recent console entries, filtered by severity |
 | `unity_playmode` | `play` / `pause` / `stop` |
 | `unity_asset_search` | Search `AssetDatabase` by text, type and folder |
@@ -48,9 +48,13 @@ the Cordis `context` the host passes in.
 ### 2. Unity bridge (per project)
 
 1. Run `node scripts/sync-roslyn.mjs` once to stage the Roslyn assemblies into
-   `unity-package/Editor/Roslyn/` (they are not committed).
+   `unity-package/Editor/Roslyn/` (they are not committed). It takes them from
+   the newest Unity editor it can find, which keeps them version-matched with
+   the Mono the editor loads.
 2. In Unity: **Window → Package Manager → + → Add package from disk…** and pick
-   `unity-package/package.json`.
+   `unity-package/package.json`. Or copy the folder yourself:
+   `node scripts/install-unity-package.mjs --project <path-to-Unity-project>`,
+   which also resolves assembly clashes with DLLs the project already ships.
 3. Keep the editor open. The bridge starts automatically; check
    **Tools → dsh-locus → Show bridge status**.
 
@@ -104,9 +108,10 @@ Unity tool to disambiguate by full path, project name, instance key or pid.
 
 ```sh
 npm test                      # 38 tests: plugin entry, protocol, discovery, LaTeX, tools, Blender bridge
-node scripts/sync-roslyn.mjs  # stage Roslyn, needed by the C# check below
+node scripts/sync-roslyn.mjs  # stage Roslyn, needed by the C# checks below
 node scripts/check-csharp.mjs # compile the Unity scripts against API stubs
-node scripts/verify-host.mjs  # mount the plugin on the harness's real Cordis + validators
+node scripts/check-csharp.mjs --unity  # compile them against a real Unity install
+npm run verify:host           # mount the plugin on the harness's real Cordis + validators
 ```
 
 The test suite drives the real Blender add-on against a stubbed `bpy`, so the
@@ -126,15 +131,21 @@ the archive is somewhere unusual.
 
 ## Limitations
 
-- **Verified without Unity and Blender.** This machine has neither installed, so
-  the Unity package compiles against hand-written API stubs
-  (`test/csharp/UnityStubs.cs`) and the Blender add-on runs against a stubbed
-  `bpy`. Real-editor testing is the first thing to do on a workstation that has
-  them.
-- **LaTeX was tested only without an engine installed.** The missing-engine path
-  and log parsing are covered; a full compile needs MiKTeX/TeX Live.
-- Unity 2021.3+ only: the package uses `Package Manager` local packages and the
-  Roslyn 3.8 assemblies that match Unity's `netstandard2.1` profile.
+- **Blender and LaTeX are verified without the real application.** The Blender
+  add-on is exercised against a stubbed `bpy` (socket server, token handshake,
+  main-thread scheduling, instance lifecycle), and the LaTeX path is covered for
+  the missing-engine case and log parsing; a real Blender session and a real
+  `xelatex` run are still untested here.
+- **Unity is verified against one real project** (Unity 2021.3.18f1):
+  `unity_status`, `unity_execute`, `unity_get_console_log`, `unity_asset_search`
+  and `unity_asset_read` were exercised end to end. Play mode, menu items and
+  recompiles are implemented but not exercised on that project.
+- `unity_execute` compiles the snippet with Roslyn and runs it **on the editor
+  main thread**, which is what lets it call Unity APIs; a script that blocks
+  freezes the editor until it returns. Use `return` for the result — there is no
+  trailing-expression handling. `await` works, but the continuation resumes on
+  the thread pool, so a Unity API call after an `await` raises Unity's own
+  "can only be called from the main thread" error (verified on 2021.3.18f1).
 - `unity_execute` runs arbitrary C# in your editor, and `blender_execute`
   arbitrary Python. Set `allowExecute: false` if you want the rest of the tools
   without that power.

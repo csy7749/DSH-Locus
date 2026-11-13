@@ -55,11 +55,11 @@ export function unityTools(options) {
     {
       name: 'unity_execute',
       description:
-        'Run C# code inside the open Unity editor with Roslyn script semantics (no class wrapper; a trailing expression becomes the result). Use it to inspect or modify the active scene, instantiate prefabs, edit assets, or call Editor APIs. Console output is captured; compile errors come back without throwing. Requires Unity to be idle, not compiling.',
+        'Run C# code inside the open Unity editor. The snippet is compiled with Roslyn into memory and run on the editor main thread, so Unity API calls work; a `return` value becomes the result and Console output is captured. Compile errors come back as data instead of throwing. Blocks the editor while it runs: never write an infinite loop or a blocking wait here, and note that `await` resumes on the thread pool (Unity API calls after an await therefore fail with Unity\'s main-thread error). Requires Unity to be idle, not compiling.',
       parameters: {
         type: 'object',
         properties: {
-          code: { ...string('C# statements or a single expression. Imports already include System, System.Linq, System.IO, UnityEngine and UnityEditor.'), title: 'Code' },
+          code: { ...string('C# statements. A `return` gives the result. Imports already include System, System.Linq, System.IO, UnityEngine and UnityEditor.'), title: 'Code' },
           project,
           mode: { type: 'string', enum: ['editor', 'play'], description: 'Reject the call unless the editor is in play mode ("play"). Default "editor".' },
         },

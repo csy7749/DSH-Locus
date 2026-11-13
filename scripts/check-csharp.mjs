@@ -125,6 +125,7 @@ const roslynNames = [
   'Microsoft.CodeAnalysis.CSharp.Scripting.dll',
   'System.Collections.Immutable.dll',
   'System.Reflection.Metadata.dll',
+  'System.Memory.dll',
   'System.Runtime.CompilerServices.Unsafe.dll',
 ]
 

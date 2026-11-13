@@ -63,6 +63,15 @@ namespace DshLocus
                 "time", DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         }
 
+        /// <summary>"2021.3.18f1" becomes "2021.3": grouping editors by major.minor is what
+        /// callers actually need. Application.version is the player's bundle version, not this.</summary>
+        private static string ShortVersion(string version)
+        {
+            if (string.IsNullOrEmpty(version)) return string.Empty;
+            var parts = version.Split('.');
+            return parts.Length >= 2 ? parts[0] + "." + parts[1] : parts[0];
+        }
+
         private static Dictionary<string, object> Status()
         {
             var scene = UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene();
@@ -71,7 +80,8 @@ namespace DshLocus
                 "projectName", new DirectoryInfo(DshLocusPaths.ProjectRoot()).Name,
                 "projectPath", DshLocusPaths.ProjectRoot(),
                 "unityVersion", Application.unityVersion,
-                "unityVersionShort", Application.version,
+                "unityVersionShort", ShortVersion(Application.unityVersion),
+                "playerVersion", Application.version,
                 "platform", Application.platform.ToString(),
                 "buildTarget", EditorUserBuildSettings.activeBuildTarget.ToString(),
                 "activeScenePath", string.IsNullOrEmpty(scene.path) ? null : scene.path,

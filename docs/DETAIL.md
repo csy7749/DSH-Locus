@@ -101,9 +101,28 @@ toolchain discovery and log parsing, all tool definitions against fake bridges,
 and the real Blender add-on against a stubbed `bpy` (socket server, token
 handshake, main-thread scheduling, instance publish/remove).
 
-Not yet verified against real apps: the Unity package compiles against API stubs
-but has not been loaded by a Unity editor, and no LaTeX document has been
-compiled end to end on this machine. Both are called out in the README.
+Verified against a real Unity editor (2021.3.18f1): the package imports, the
+bridge starts on the editor main thread, and `status`, `execute`,
+`console`, `asset_search` and `read_asset` answer correctly. `execute` was
+exercised for a value, a compile error (reported against the snippet line, not
+the generated wrapper line), an uncaught exception, and an `await` — the last one
+runs its continuation on the thread pool, which keeps the editor responsive while
+the snippet finishes and turns a Unity API call after the `await` into Unity's
+own main-thread exception instead of a freeze.
+
+Four issues that only a real editor surfaced are fixed in the package: the Roslyn
+assemblies are staged from Unity's own folder (the older set failed at runtime
+with a missing `System.Memory`), the plugin `.meta` files mark the assemblies
+Editor-only with reference validation off (otherwise Unity refuses them over a
+`System.Runtime.CompilerServices.Unsafe` version clash in the host project), the
+handshake caches `Application.dataPath` before the accept thread starts
+(`get_dataPath` may only be called from the main thread), and `execute` compiles
+a class and loads it with `Assembly.Load` instead of using `CSharpScript`, whose
+assembly loader throws `NotImplementedException` on Unity's Mono.
+
+Play mode, menu items and recompiles are implemented but not exercised there.
+No LaTeX document has been compiled end to end on this machine, and no real
+Blender session has been used.
 
 ## License
 
