@@ -21,14 +21,24 @@ export function clip(text, max = 4000) {
 }
 
 /**
- * Best-effort session working directory, used to pick the matching Unity
- * project when several editors are open. Falls back to the host process cwd.
+ * Best-effort session working directory, used to resolve relative paths and to
+ * pick the matching Unity project when several editors are open.
+ *
+ * The session's directory lives on its durable header (`exec.agent.session.header.cwd`),
+ * not on the session object itself; reading the wrong field silently resolved
+ * every relative path against the host process directory instead of the workspace.
+ * The extra candidates keep this working if the host shape shifts.
+ *
  * @param {any} exec - tool execution context.
  * @returns {string} directory.
  */
 export function sessionCwd(exec) {
-  const candidate = exec?.agent?.session?.cwd ?? exec?.agent?.cwd
-  return typeof candidate === 'string' && candidate.trim() !== '' ? candidate : process.cwd()
+  const session = exec?.agent?.session
+  const candidates = [session?.header?.cwd, session?.cwd, exec?.agent?.cwd, exec?.cwd]
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.trim() !== '') return candidate
+  }
+  return process.cwd()
 }
 
 /**
@@ -66,4 +76,44 @@ export function rethrow(what, error) {
  */
 export function renderJson(value) {
   return textBlock(clip(JSON.stringify(value, null, 2)))
+}
+
+/**
+ * Strip everything JSON cannot carry.
+ *
+ * The host refuses a tool result unless it survives a JSON round trip, and
+ * `undefined` is the usual culprit: bridge payloads and build reports legitimately
+ * omit fields, and `{ version: undefined }` silently becomes `{}` once serialised.
+ * Object keys whose value is undefined are dropped; undefined array slots become
+ * null so positions stay stable.
+ *
+ * @param {unknown} value - any tool result.
+ * @param {WeakSet<object>} [seen] - cycle guard.
+ * @returns {any} a value that round-trips through JSON unchanged.
+ */
+export function toLosslessJson(value, seen = new WeakSet()) {
+  if (value === null) return null
+  const type = typeof value
+  if (type === 'string' || type === 'boolean') return value
+  if (type === 'number') return Number.isFinite(value) ? value : null
+  if (type === 'bigint') return value.toString()
+  if (type !== 'object') return undefined // undefined, function, symbol
+  if (value instanceof Date) return value.toISOString()
+  if (ArrayBuffer.isView(value)) return Array.from(/** @type {any} */ (value))
+  if (seen.has(value)) return null
+  seen.add(value)
+
+  if (Array.isArray(value)) {
+    return value.map((entry) => {
+      const cleaned = toLosslessJson(entry, seen)
+      return cleaned === undefined ? null : cleaned
+    })
+  }
+
+  const result = {}
+  for (const [key, entry] of Object.entries(value)) {
+    const cleaned = toLosslessJson(entry, seen)
+    if (cleaned !== undefined) result[key] = cleaned
+  }
+  return result
 }

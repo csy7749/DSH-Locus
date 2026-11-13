@@ -33,8 +33,8 @@ function clearInstances() {
   fs.rmSync(instancesDir(), { recursive: true, force: true })
 }
 
-/** Fake `exec` argument; the tools only read the session cwd and signal. */
-const exec = { agent: { session: { cwd: os.tmpdir() } } }
+/** Fake `exec` argument, shaped like the host's ToolRunContext. */
+const exec = { agent: { session: { header: { cwd: os.tmpdir() } } } }
 
 test('every definition satisfies the DSH tool contract', () => {
   for (const definition of createTools(options)) {
@@ -46,6 +46,29 @@ test('every definition satisfies the DSH tool contract', () => {
     assert.equal(typeof definition.execute, 'function')
     assert.ok(!/[^a-z0-9_]/.test(definition.name), `${definition.name} is a legal tool name`)
   }
+})
+
+test('results survive a JSON round trip', async () => {
+  // The host rejects a result that JSON cannot carry verbatim, and it checks that
+  // after the fact: a `{ version: undefined }` field becomes an invalid tool
+  // result rather than a silently missing key. Both shapes below omit fields.
+  clearInstances()
+  for (const name of ['latex_status', 'locus_instances']) {
+    const value = await tool(name).execute({}, exec)
+    assert.deepEqual(JSON.parse(JSON.stringify(value)), value, `${name} returns lossless JSON`)
+  }
+
+  const { toLosslessJson } = await import('../src/tools/common.js')
+  assert.deepEqual(toLosslessJson({ a: 1, b: undefined, c: [1, undefined, 2] }), { a: 1, c: [1, null, 2] })
+  assert.deepEqual(toLosslessJson({ n: Number.NaN, i: Infinity, big: 10n, when: new Date('2026-01-02T03:04:05Z') }), {
+    n: null,
+    i: null,
+    big: '10',
+    when: '2026-01-02T03:04:05.000Z',
+  })
+  const cyclic = { name: 'loop' }
+  cyclic.self = cyclic
+  assert.deepEqual(toLosslessJson(cyclic), { name: 'loop', self: null })
 })
 
 test('status renders the editor state reported by the bridge', async () => {
@@ -202,6 +225,26 @@ test('latex_status reports the local toolchain', async () => {
   assert.ok(Array.isArray(value.engines))
   const text = tool('latex_status').output.render({}, value)[0].text
   assert.ok(text.length > 0)
+})
+
+test('relative paths resolve against the session workspace', async () => {
+  // Regression: the session directory is on the session header, not on the
+  // session object. Reading the wrong field resolved relative paths against the
+  // host process directory and reported a misleading "source not found".
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'dsh-locus-ws-'))
+  const expected = path.join(workspace, 'paper', 'main.tex')
+  await assert.rejects(
+    tool('latex_build').execute({ texPath: 'paper/main.tex' }, { agent: { session: { header: { cwd: workspace } } } }),
+    (error) => {
+      assert.ok(String(error.message).includes(expected), `resolved inside the workspace, got: ${error.message}`)
+      return true
+    },
+  )
+
+  const { sessionCwd } = await import('../src/tools/common.js')
+  assert.equal(sessionCwd({ agent: { session: { header: { cwd: workspace } } } }), workspace)
+  assert.equal(sessionCwd({ agent: { session: { cwd: workspace } } }), workspace)
+  assert.equal(sessionCwd({}), process.cwd())
 })
 
 test('locus_instances lists live bridges plus the LaTeX toolchain', async () => {

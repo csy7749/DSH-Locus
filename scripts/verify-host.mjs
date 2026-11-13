@@ -292,6 +292,32 @@ try {
   }
   checks.push('dsh-tools: invalid arguments are still rejected (the checks above are not vacuous)');
 
+  // ---- 3. Real results survive the host's own lossless materializer --------
+  // The executor calls snapshotJsonValue() on every tool body result and turns
+  // `undefined` into `tool "X" returned invalid output: value is not lossless
+  // JSON`. Comparing against that exact function is what catches a result with
+  // undefined fields, which JSON would otherwise silently drop.
+  extractClosure('@deepseek-ai/dsh-util-values');
+  const { snapshotJsonValue } = await importHostPackage('@deepseek-ai/dsh-util-values');
+
+  const offline = [
+    ['latex_status', {}],
+    ['locus_instances', {}],
+  ];
+  for (const [name, args] of offline) {
+    const tool = tools.find((entry) => entry.name === name);
+    if (!tool) throw new Error(`missing tool ${name}`);
+    const value = await tool.execute(args, {});
+    const snapshot = snapshotJsonValue(value);
+    if (snapshot === undefined) {
+      throw new Error(`${name}: the host would reject this result as "value is not lossless JSON" (${JSON.stringify(value)?.slice(0, 200)})`);
+    }
+    if (JSON.stringify(snapshot) !== JSON.stringify(value)) {
+      throw new Error(`${name}: the host would rewrite the result, so a field is not JSON data`);
+    }
+  }
+  checks.push(`dsh-util-values: ${offline.length} real tool results pass snapshotJsonValue unchanged`);
+
   console.log('\nPASS');
   for (const line of checks) console.log(`  - ${line}`);
 } catch (error) {

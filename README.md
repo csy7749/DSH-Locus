@@ -103,7 +103,7 @@ Unity tool to disambiguate by full path, project name, instance key or pid.
 ## Tests
 
 ```sh
-npm test                      # 36 tests: plugin entry, protocol, discovery, LaTeX, tools, Blender bridge
+npm test                      # 38 tests: plugin entry, protocol, discovery, LaTeX, tools, Blender bridge
 node scripts/sync-roslyn.mjs  # stage Roslyn, needed by the C# check below
 node scripts/check-csharp.mjs # compile the Unity scripts against API stubs
 node scripts/verify-host.mjs  # mount the plugin on the harness's real Cordis + validators
