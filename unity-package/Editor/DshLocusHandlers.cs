@@ -80,7 +80,7 @@ namespace DshLocus
                 "isPlaying", EditorApplication.isPlaying,
                 "isPaused", EditorApplication.isPaused,
                 "isCompiling", EditorApplication.isCompiling || EditorApplication.isUpdating,
-                "isFocused", InternalEditorUtility.isApplicationActive,
+                "isFocused", UnityEditorInternal.InternalEditorUtility.isApplicationActive,
                 "editorPid", Process.GetCurrentProcess().Id,
                 "timeSinceStartup", EditorApplication.timeSinceStartup,
                 "selection", Selection.objects == null ? 0 : Selection.objects.Length,

@@ -107,11 +107,6 @@ namespace UnityEditor
         public static bool IsValidFolder(string path) { return true; }
     }
 
-    public static class InternalEditorUtility
-    {
-        public static bool isApplicationActive = true;
-    }
-
     [AttributeUsage(AttributeTargets.Class)]
     public sealed class InitializeOnLoadAttribute : Attribute { }
 
@@ -136,6 +131,17 @@ namespace UnityEditor.Compilation
     public static class CompilationPipeline
     {
         public static void RequestScriptCompilation() { }
+    }
+}
+
+// InternalEditorUtility lives in UnityEditorInternal, not UnityEditor. The
+// stubs previously mirrored our own mistake here, so the stub build passed a
+// compile error that real Unity rejects.
+namespace UnityEditorInternal
+{
+    public static class InternalEditorUtility
+    {
+        public static bool isApplicationActive { get { return true; } }
     }
 }
 

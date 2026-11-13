@@ -40,7 +40,8 @@
     "test": "node --test --test-isolation=none --test-force-exit test/*.test.mjs",
     "sync-roslyn": "node scripts/sync-roslyn.mjs",
     "check:csharp": "node scripts/check-csharp.mjs",
-    "verify:host": "node scripts/verify-host.mjs"
+    "verify:host": "node scripts/verify-host.mjs",
+    "check:csharp:unity": "node scripts/check-csharp.mjs --unity"
   },
   "dsh": {
     "bundle": {
