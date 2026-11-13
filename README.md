@@ -111,10 +111,10 @@ node scripts/verify-host.mjs  # mount the plugin on the harness's real Cordis + 
 
 The test suite drives the real Blender add-on against a stubbed `bpy`, so the
 socket server, token handshake, main-thread scheduling and instance lifecycle
-are all exercised without Blender installed. Note that `npm test` runs the files
-in one process by design: the suite starts real sockets and a Python child, which
-the sandbox blocks from being forked per file. If you run `node --test` yourself,
-pass `--test-isolation=none --test-force-exit`.
+are all exercised without Blender installed. `npm test` runs every file in one
+process (`--test-isolation=none`) by design: the suite starts real sockets and a
+Python child, which a per-file fork cannot do under a restrictive sandbox. If you
+invoke `node --test` yourself, keep `--test-isolation=none --test-force-exit`.
 
 `verify-host.mjs` is the check that the mock-based tests cannot give you: it
 unpacks `@deepseek-ai/cordis` and `@deepseek-ai/dsh-tools` from the installed
