@@ -1,6 +1,14 @@
 # Roslyn assemblies are staged locally, never committed.
 unity-package/Editor/Roslyn/
 
+# Python caches
+__pycache__/
+*.py[cod]
+
+# Local packages and scratch
+*.tgz
+.tmp/
+
 # Node
 node_modules/
 npm-debug.log*

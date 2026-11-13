@@ -158,10 +158,10 @@ const args = [
   '-target:library',
   '-langversion:9',
   '-nullable:disable',
-  // CS1701: the .NET SDK reference pack and the shipped Roslyn 3.8 assemblies
-  // carry different System.Collections.Immutable versions. Unity loads the
-  // DLLs from unity-package/Editor/Roslyn, so the mismatch is an artifact of
-  // compiling against the SDK's reference pack.
+  // CS1701: the .NET SDK reference pack and the staged Roslyn assemblies carry
+  // different System.Collections.Immutable versions. Unity loads the DLLs from
+  // unity-package/Editor/Roslyn, so the mismatch is an artifact of compiling
+  // against the SDK's reference pack.
   '-nowarn:CS0067,CS0649,CS0169,CS1701,CS8632',
   `-out:${outDll}`,
 ]
@@ -182,7 +182,7 @@ if (unityData) {
     if (name.endsWith('.dll')) args.push(`-r:${path.join(monoApi, name)}`)
   }
   // Facades carry netstandard/System.Runtime facades that netstandard2.0
-  // assemblies (our shipped Roslyn 3.8) are compiled against.
+  // assemblies (the staged Roslyn set) are compiled against.
   const facades = path.join(monoApi, 'Facades')
   if (fs.existsSync(facades)) {
     for (const name of fs.readdirSync(facades)) {

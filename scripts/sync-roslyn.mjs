@@ -8,10 +8,8 @@
  * Preferred source: the Roslyn build that ships inside the Unity editor itself
  * (`<Editor>/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn`). That
  * set is internally consistent AND has the same assembly identities the editor
- * already loads, which avoids duplicate-version weirdness at runtime. A Locus
- * checkout is used as a fallback only: its folder mixes a .NET 8
- * System.Collections.Immutable with an old Unsafe, and that combination fails at
- * runtime with "Could not load System.Memory".
+ * already loads. Use --from to select the matching Unity installation explicitly
+ * when several editor versions are installed. Do not mix dependency versions.
  *
  * Usage:
  *   node scripts/sync-roslyn.mjs [--from <dir>] [--check] [--clean]
@@ -83,8 +81,6 @@ const explicit = value('from') ?? process.env.DSH_LOCUS_ROSLYN
 const candidates = [
   explicit,
   ...unityRoslynDirs(),
-  'D:\\AI\\Locus\\third_party\\roslyn-3.8.0\\assemblies',
-  path.resolve(repoRoot, '..', 'Locus', 'third_party', 'roslyn-3.8.0', 'assemblies'),
 ].filter(Boolean)
 
 /** @param {string | undefined} dir - candidate source directory. */
@@ -102,15 +98,12 @@ if (flag('clean')) {
 }
 
 if (!source) {
-  console.error('Could not find the Roslyn 3.8 assemblies. Tried:')
+  console.error('Could not find a complete set of Unity Roslyn assemblies. Tried:')
   for (const candidate of candidates) console.error(`  ${candidate}`)
   console.error('')
-  console.error('Download Microsoft.CodeAnalysis.CSharp.Scripting 3.8.0 from nuget.org and extract')
-  console.error('lib/netstandard2.0/*.dll from each of these packages into one folder:')
-  console.error('  Microsoft.CodeAnalysis.Common, Microsoft.CodeAnalysis.CSharp,')
-  console.error('  Microsoft.CodeAnalysis.Scripting, Microsoft.CodeAnalysis.CSharp.Scripting,')
-  console.error('  System.Collections.Immutable, System.Reflection.Metadata,')
-  console.error('  System.Runtime.CompilerServices.Unsafe')
+  console.error('Use the Roslyn folder from the Unity editor used by your project:')
+  console.error('  <Editor>/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn')
+  console.error('All dependencies must come from a compatible set; do not mix NuGet versions.')
   console.error('')
   console.error('Then rerun: node scripts/sync-roslyn.mjs --from <that folder>')
   process.exit(1)
@@ -131,8 +124,8 @@ for (const name of fs.readdirSync(source)) {
   staged.add(name)
 }
 
-// Drop anything a previous run staged from a different Roslyn build: leftover
-// 3.8 satellite assemblies next to 3.7 code are a version mismatch waiting to
+// Drop anything a previous run staged from a different Roslyn build: satellite
+// assemblies from another version next to these are a mismatch waiting to
 // fail, and the .meta files from the source checkout carry foreign GUIDs.
 for (const name of fs.readdirSync(targetDir)) {
   if (name.endsWith('.meta')) continue

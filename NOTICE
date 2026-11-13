@@ -11,14 +11,15 @@ and are released under MIT.
 --------------------------------------------------------------------------
 Third-party components
 
-1. Roslyn (Microsoft.CodeAnalysis.CSharp.Scripting 3.8.0)
+1. Roslyn (Microsoft.CodeAnalysis and friends, taken from the Unity editor)
    Files: unity-package/Editor/Roslyn/*.dll (staged locally, not committed)
    Copyright (c) .NET Foundation and Contributors
    Licensed under the MIT License.
    https://github.com/dotnet/roslyn
    Not modified. Redistributed unmodified when you run
-   scripts/sync-roslyn.mjs; that directory is git-ignored, so a source
-   release carries no binaries.
+   scripts/sync-roslyn.mjs, which copies them out of your own Unity
+   installation; that directory is git-ignored, so this repository carries no
+   binaries. The exact versions are therefore whatever your editor ships.
 
 2. DeepSeek Harness plugin conventions
    No @deepseek-ai/* packages are imported at runtime; the bundle only relies
