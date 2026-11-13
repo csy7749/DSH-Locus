@@ -1,0 +1,17 @@
+# Roslyn assemblies are staged locally, never committed.
+unity-package/Editor/Roslyn/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Local scratch
+tmp/
+*.log
+.DS_Store
+
+# LaTeX build output produced by tests
+test/fixtures/*.pdf
+test/fixtures/*.svg
+test/fixtures/*.aux
+test/fixtures/*.log

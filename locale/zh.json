@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "dsh-locus",
+    "description": "在打开的 Unity 编辑器里执行 C#、通过 bpy 驱动 Blender、把 LaTeX 编译成 PDF/SVG。",
+    "detail": "docs/DETAIL.md"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "com.dsh.locus",
+  "version": "0.1.0",
+  "displayName": "dsh-locus bridge",
+  "description": "Exposes the open Unity editor to the dsh-locus DSH plugin: run C# through Roslyn, read the console, drive play mode, search assets, and run menu items. Editor-only; nothing is included in player builds.",
+  "unity": "2021.3",
+  "keywords": [
+    "dsh",
+    "locus",
+    "agent",
+    "automation",
+    "roslyn"
+  ],
+  "author": {
+    "name": "dsh-locus contributors"
+  },
+  "license": "MIT",
+  "dependencies": {}
+}

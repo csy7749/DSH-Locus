@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "dsh-locus",
+    "description": "Runs C# in the open Unity editor, drives Blender through bpy, and compiles LaTeX to PDF/SVG.",
+    "detail": "docs/DETAIL.md"
+  }
+}

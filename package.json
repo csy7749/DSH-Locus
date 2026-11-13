@@ -1,0 +1,61 @@
+{
+  "name": "dsh-locus",
+  "version": "0.1.0",
+  "description": "Unity, Blender and LaTeX tools for DeepSeek Harness: run C# in the Unity editor, drive Blender from bpy, and build LaTeX to PDF/SVG.",
+  "license": "MIT",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "cordis.patch.yml",
+    "src",
+    "unity-package",
+    "blender-addon",
+    "scripts",
+    "docs",
+    "locale/*.json",
+    "icon.svg",
+    "LICENSE",
+    "NOTICE",
+    "README.md"
+  ],
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "unity",
+    "blender",
+    "latex"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test --test-force-exit test/*.test.mjs",
+    "sync-roslyn": "node scripts/sync-roslyn.mjs",
+    "check:csharp": "node scripts/check-csharp.mjs",
+    "verify:host": "node scripts/verify-host.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "engines": {
+      "dsh": ">=0.1.7-rc.1"
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/cordis": {
+      "optional": true
+    }
+  }
+}

@@ -1,0 +1,32 @@
+dsh-locus
+Copyright (c) 2026 dsh-locus contributors
+Licensed under the MIT License (see LICENSE).
+
+This project is an independent implementation. It shares a goal with Locus
+(https://github.com/farlocus/locus, GPL-3.0-or-later) — exposing Unity, Blender
+and LaTeX to a coding agent — but contains no Locus source code. The wire
+protocol, the Unity package and the Blender add-on were written from scratch
+and are released under MIT.
+
+--------------------------------------------------------------------------
+Third-party components
+
+1. Roslyn (Microsoft.CodeAnalysis.CSharp.Scripting 3.8.0)
+   Files: unity-package/Editor/Roslyn/*.dll (staged locally, not committed)
+   Copyright (c) .NET Foundation and Contributors
+   Licensed under the MIT License.
+   https://github.com/dotnet/roslyn
+   Not modified. Redistributed unmodified when you run
+   scripts/sync-roslyn.mjs; that directory is git-ignored, so a source
+   release carries no binaries.
+
+2. DeepSeek Harness plugin conventions
+   No @deepseek-ai/* packages are imported at runtime; the bundle only relies
+   on the Cordis plugin context that the host passes to apply(ctx, config).
+
+--------------------------------------------------------------------------
+Trademarks
+
+Unity is a trademark of Unity Technologies. Blender is a trademark of the
+Blender Foundation. LaTeX is a project of the LaTeX Project Team. This project
+is not affiliated with, endorsed by, or sponsored by any of them.

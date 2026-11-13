@@ -1,0 +1,9 @@
+- insert:
+    - id: dsh-locus
+      name: dsh-locus
+      config:
+        allowExecute: true
+        timeoutMs: 30000
+        processTimeoutMs: 120000
+        latexEngine: auto
+        svgPreview: true
