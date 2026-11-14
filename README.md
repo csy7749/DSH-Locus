@@ -1,5 +1,7 @@
 # dsh-locus
 
+English | [简体中文](README.zh-CN.md)
+
 Unity, Blender and LaTeX tools for **DeepSeek Harness**, so an agent can work
 inside the tools you already have open instead of guessing from files on disk.
 
