@@ -128,4 +128,4 @@ Blender session has been used.
 
 ## License
 
-MIT. No Locus source code is included; see `NOTICE` in the package root.
+GPL-3.0-or-later. Inspired by https://github.com/r1n7aro/Locus. No Locus source code is included; see `NOTICE` in the package root.

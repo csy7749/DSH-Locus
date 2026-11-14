@@ -9,6 +9,10 @@ inside the tools you already have open instead of guessing from files on disk.
 | Blender | Run Python against `bpy` in the running Blender, report scene state, render a screenshot |
 | LaTeX | Compile a `.tex` document to PDF (and page 1 to SVG), with parsed errors and warnings |
 
+Inspired by [Locus](https://github.com/r1n7aro/Locus). This is an independent
+DSH plugin implementation of the Unity, Blender and LaTeX integration idea,
+not an official Locus release. Like Locus, it is licensed under GPL-3.0-or-later.
+
 Nothing here needs the Locus desktop app. The plugin talks to a small bridge
 that runs inside Unity and Blender respectively.
 
@@ -160,7 +164,7 @@ the archive is somewhere unusual.
 
 ## License
 
-MIT. Independent implementation: no code from
-[Locus](https://github.com/farlocus/locus) (GPL-3.0-or-later) is included. The
+GPL-3.0-or-later, following [Locus](https://github.com/r1n7aro/Locus).
+Independent implementation: no Locus source code is included. The
 staged Roslyn assemblies are Microsoft's MIT-licensed build — see
 [NOTICE](NOTICE).

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-or-later
 """dsh-locus bridge for Blender.
 
 Exposes a running Blender to the dsh-locus DSH plugin over a loopback TCP

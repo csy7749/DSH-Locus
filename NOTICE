@@ -1,12 +1,12 @@
 dsh-locus
 Copyright (c) 2026 dsh-locus contributors
-Licensed under the MIT License (see LICENSE).
+Licensed under GPL-3.0-or-later (see LICENSE).
 
 This project is an independent implementation. It shares a goal with Locus
-(https://github.com/farlocus/locus, GPL-3.0-or-later) — exposing Unity, Blender
+(https://github.com/r1n7aro/Locus, GPL-3.0-or-later) — exposing Unity, Blender
 and LaTeX to a coding agent — but contains no Locus source code. The wire
 protocol, the Unity package and the Blender add-on were written from scratch
-and are released under MIT.
+and are released under GPL-3.0-or-later.
 
 --------------------------------------------------------------------------
 Third-party components

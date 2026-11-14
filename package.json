@@ -2,7 +2,7 @@
   "name": "dsh-locus",
   "version": "0.1.0",
   "description": "Unity, Blender and LaTeX tools for DeepSeek Harness: run C# in the Unity editor, drive Blender from bpy, and build LaTeX to PDF/SVG.",
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "type": "module",
   "main": "index.js",
   "exports": {
